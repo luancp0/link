@@ -1,1 +1,115 @@
-h
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniGame GitHub</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e272e;
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+    .game {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      margin: 10px auto;
+      width: 90%;
+      max-width: 400px;
+      background: #2f3640;
+      border-radius: 10px;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #00a8ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎮 MiniGame – Hoàn thành để nhận Key</h1>
+
+  <div class="game" id="game1">
+    <p>🧩 Game 1: Bấm để hoàn thành</p>
+    <button class="btn" onclick="completeGame(1)">Hoàn thành Game 1</button>
+  </div>
+
+  <div class="game" id="game2" style="display:none">
+    <p>🧩 Game 2: Bấm để hoàn thành</p>
+    <button class="btn" onclick="completeGame(2)">Hoàn thành Game 2</button>
+  </div>
+
+  <div class="game" id="game3" style="display:none">
+    <p>🧩 Game 3: Bấm để hoàn thành</p>
+    <button class="btn" onclick="completeGame(3)">Hoàn thành Game 3</button>
+  </div>
+
+  <div id="key-area" style="display:none; margin-top: 30px;">
+    <h2>🎉 Hoàn tất!</h2>
+    <p>🔐 Đây là key của bạn:</p>
+    <div id="user-key" style="font-size: 20px; background: #fff; color: #000; padding: 10px; border-radius: 5px; display: inline-block;"></div>
+    <br><br>
+    <button class="btn" onclick="copyKey()">📋 Sao chép key</button>
+    <button class="btn" style="background: #44bd32;" onclick="goToVercel()">🚀 Sang trang xác minh</button>
+  </div>
+
+  <script>
+    let game1Completed = false;
+    let game2Completed = false;
+    let game3Completed = false;
+    let pageReady = false;
+    let userKey = "";
+
+    function completeGame(gameNumber) {
+      if (gameNumber === 1) {
+        game1Completed = true;
+        document.getElementById("game1").style.display = "none";
+        document.getElementById("game2").style.display = "block";
+      } else if (gameNumber === 2 && game1Completed) {
+        game2Completed = true;
+        document.getElementById("game2").style.display = "none";
+        document.getElementById("game3").style.display = "block";
+      } else if (gameNumber === 3 && game2Completed) {
+        game3Completed = true;
+        document.getElementById("game3").style.display = "none";
+        showKeyAfterDelay();
+      }
+    }
+
+    function generateStrongKey(length = 18 + Math.floor(Math.random() * 7)) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}";
+      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+
+    function showKeyAfterDelay() {
+      setTimeout(() => {
+        userKey = generateStrongKey();
+        document.getElementById("user-key").innerText = userKey;
+        document.getElementById("key-area").style.display = "block";
+      }, 1000); // Có thể thêm delay 120s nếu muốn
+    }
+
+    function copyKey() {
+      navigator.clipboard.writeText(userKey).then(() => {
+        alert("📋 Đã sao chép key!");
+      }).catch(err => {
+        alert("⚠️ Không thể sao chép: " + err);
+      });
+    }
+
+    function goToVercel() {
+      const redirectURL = "https://v0-new-project-hpzkcjchesg.vercel.app/?key=" + encodeURIComponent(userKey);
+      window.location.href = redirectURL;
+    }
+  </script>
+
+</body>
+</html>
