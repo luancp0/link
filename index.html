@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>MiniGame Kiểm Tra</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #fbc531;
+    }
+    .game-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+    .game {
+      background: #2f3640;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      margin: 10px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    button {
+      background: #00a8ff;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .timer {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .drop-target {
+      border: 2px dashed #fff;
+      height: 50px;
+      margin-top: 10px;
+    }
+    .blocked {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 MiniGame - Kiểm tra năng lực & Kiên nhẫn 🎮</h1>
+
+  <div class="timer">
+    ⏳ Thời gian chờ trước khi chơi game: <span id="play-timer">10</span> giây<br>
+    🕒 Thời gian chờ toàn trang: <span id="page-timer">120</span> giây
+  </div>
+
+  <div class="blocked" id="block-warning" style="display:none;">
+    ⚠️ Bạn đã bị cấm vì phát hiện gian lận! Thử lại sau vài phút.
+  </div>
+
+  <div class="game-container" id="games">
+    <!-- Game 1 -->
+    <div class="game" id="game1">
+      <h3>Game 1: Ghi nhớ màu</h3>
+      <div class="timer">⏱ Nhớ chuỗi: <span id="game1-timer">--</span></div>
+      <div id="color-sequence"></div>
+      <input id="color-input" placeholder="Nhập chuỗi (VD: đỏ,xanh,...)"><br><br>
+      <button onclick="checkMemory()">Gửi</button>
+      <p id="game1-status"></p>
+    </div>
+
+    <!-- Game 2 -->
+    <div class="game" id="game2">
+      <h3>Game 2: Đếm hình</h3>
+      <div class="timer">⏱ Chờ: <span id="game2-timer">40</span>s</div>
+      <div id="count-area"></div>
+      <input id="count-input" type="number" placeholder="Nhập số lượng"><br><br>
+      <button onclick="checkCount()">Kiểm tra</button>
+      <p id="game2-status"></p>
+    </div>
+
+    <!-- Game 3 -->
+    <div class="game" id="game3">
+      <h3>Game 3: Kéo thả</h3>
+      <div class="timer">⏱ Chờ: <span id="game3-timer">40</span>s</div>
+      <div draggable="true" id="circle" style="width:40px;height:40px;background:orange;border-radius:50%;margin:10px;" ondragstart="drag(event)"></div>
+      <div id="dropzone" class="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+      <p id="game3-status"></p>
+    </div>
+  </div>
+
+  <script>
+    // ✅ KHÔNG cần REDIRECT_URL nữa
+    // const REDIRECT_URL = "https://v0-new-project-hpzkcjchesg.vercel.app/";
+
+    let game1Completed = false;
+    let game2Completed = false;
+    let game3Completed = false;
+    let pageReady = false;
+
+    let playWait = 10;
+    let pageWait = 120;
+
+    const timers = {
+      game2: 40,
+      game3: 40
+    };
+
+    const startTimes = {
+      game2: Date.now(),
+      game3: Date.now()
+    };
+
+    // Đếm ngược mở chơi
+    const playTimer = setInterval(() => {
+      playWait--;
+      document.getElementById("play-timer").innerText = playWait;
+      if (playWait <= 0) {
+        clearInterval(playTimer);
+        enableGames();
+      }
+    }, 1000);
+
+    // Đếm ngược toàn trang
+    const pageTimer = setInterval(() => {
+      pageWait--;
+      document.getElementById("page-timer").innerText = pageWait;
+      if (pageWait <= 0) {
+        clearInterval(pageTimer);
+        pageReady = true;
+        redirectIfReady();
+      }
+    }, 1000);
+
+    function enableGames() {
+      const games = document.querySelectorAll(".game");
+      games.forEach(g => {
+        g.style.opacity = "1";
+        g.style.pointerEvents = "auto";
+      });
+
+      Object.keys(timers).forEach(game => {
+        const interval = setInterval(() => {
+          timers[game]--;
+          document.getElementById(`${game}-timer`).innerText = timers[game];
+          if (timers[game] <= 0) clearInterval(interval);
+        }, 1000);
+      });
+
+      document.getElementById("game1-timer").innerText = "--";
+    }
+
+    // Game 1 - Ghi nhớ màu
+    const colors = ["đỏ", "xanh", "vàng", "tím", "cam"];
+    const sequence = Array.from({ length: 4 }, () => colors[Math.floor(Math.random() * colors.length)]);
+    document.getElementById('color-sequence').innerText = sequence.join(", ");
+
+    function checkMemory() {
+      const input = document.getElementById('color-input').value.toLowerCase().replace(/\s+/g, '').replace(/,/g, '');
+      const target = sequence.join('').toLowerCase();
+
+      if (input === target) {
+        game1Completed = true;
+        document.getElementById('game1-status').innerText = "✅ Hoàn thành!";
+        redirectIfReady();
+      } else {
+        document.getElementById('game1-status').innerText = "❌ Sai rồi! Chuỗi là: " + sequence.join(", ");
+        document.getElementById('color-sequence').innerText = sequence.join(", ");
+      }
+    }
+
+    // Game 2
+    let correctCount = 0;
+    const area = document.getElementById('count-area');
+    for (let i = 0; i < 20; i++) {
+      const div = document.createElement('div');
+      div.style.width = div.style.height = "20px";
+      div.style.display = "inline-block";
+      div.style.margin = "2px";
+      const isYellow = Math.random() < 0.4;
+      if (isYellow) {
+        div.style.background = "yellow";
+        correctCount++;
+      } else {
+        div.style.background = "gray";
+      }
+      area.appendChild(div);
+    }
+
+    function checkCount() {
+      const val = parseInt(document.getElementById('count-input').value);
+      const duration = (Date.now() - startTimes.game2) / 1000;
+
+      if (val === correctCount && duration >= 40) {
+        game2Completed = true;
+        document.getElementById('game2-status').innerText = "✅ Chính xác!";
+        redirectIfReady();
+      } else {
+        alert("Sai hoặc chưa đủ thời gian.");
+      }
+    }
+
+    // Game 3
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const duration = (Date.now() - startTimes.game3) / 1000;
+
+      if (duration >= 40) {
+        ev.target.appendChild(document.getElementById(data));
+        game3Completed = true;
+        document.getElementById('game3-status').innerText = "✅ Thả đúng!";
+        redirectIfReady();
+      } else {
+        alert("Chờ đủ 40 giây để hoàn thành.");
+      }
+    }
+
+    // ✅ THAY thế redirect trực tiếp bằng gửi thông điệp ra ngoài
+    function redirectIfReady() {
+      if (game1Completed && game2Completed && game3Completed && pageReady) {
+        setTimeout(() => {
+          // Gửi sự kiện ra ngoài iframe để Blogger xử lý
+          window.parent.postMessage("GAME_COMPLETED", "*");
+        }, 1000);
+      }
+    }
+  </script>
+</body>
+</html>
