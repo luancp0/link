@@ -1,1 +1,135 @@
-ok
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniGame GitHub</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e272e;
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+    .game {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      margin: 10px auto;
+      width: 90%;
+      max-width: 400px;
+      background: #2f3640;
+      border-radius: 10px;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #00a8ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    #key-area {
+      display: none;
+      margin-top: 30px;
+      background: #44bd32;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    #user-key {
+      font-size: 20px;
+      font-weight: bold;
+      background: #fff;
+      color: #000;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎮 MiniGame – Hoàn thành để nhận Key</h1>
+
+  <div class="game" id="game1">
+    <p>🧩 Game 1: Bấm để hoàn thành</p>
+    <button class="btn" onclick="completeGame(1)">Hoàn thành Game 1</button>
+  </div>
+
+  <div class="game" id="game2" style="display:none">
+    <p>🧩 Game 2: Bấm để hoàn thành</p>
+    <button class="btn" onclick="completeGame(2)">Hoàn thành Game 2</button>
+  </div>
+
+  <div class="game" id="game3" style="display:none">
+    <p>🧩 Game 3: Bấm để hoàn thành</p>
+    <button class="btn" onclick="completeGame(3)">Hoàn thành Game 3</button>
+  </div>
+
+  <!-- 🎁 Khu vực hiển thị key -->
+  <div id="key-area">
+    <p>🎉 Bạn đã hoàn thành cả 3 trò chơi!</p>
+    <div id="user-key">KEY</div><br />
+    <button class="btn" onclick="copyKey()">📋 Sao chép key</button>
+  </div>
+
+  <script>
+    let game1Completed = false;
+    let game2Completed = false;
+    let game3Completed = false;
+    let pageReady = true;
+    let userKey = "";
+
+    function completeGame(gameNumber) {
+      if (gameNumber === 1) {
+        game1Completed = true;
+        document.getElementById("game1").style.display = "none";
+        document.getElementById("game2").style.display = "block";
+      } else if (gameNumber === 2 && game1Completed) {
+        game2Completed = true;
+        document.getElementById("game2").style.display = "none";
+        document.getElementById("game3").style.display = "block";
+      } else if (gameNumber === 3 && game2Completed) {
+        game3Completed = true;
+        document.getElementById("game3").style.display = "none";
+        redirectIfReady();
+      }
+    }
+
+    function generateStrongKey(length = 18 + Math.floor(Math.random() * 7)) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}";
+      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+
+    function redirectIfReady() {
+      if (game1Completed && game2Completed && game3Completed && pageReady) {
+        setTimeout(() => {
+          userKey = generateStrongKey();
+          localStorage.setItem("userKey", userKey);
+          document.getElementById("user-key").innerText = userKey;
+          document.getElementById("key-area").style.display = "block";
+
+          // ✅ Gửi key ra Blogger để xử lý tiếp
+          window.parent.postMessage({ type: "GAME_COMPLETED", key: userKey }, "*");
+
+          // Không redirect ở đây – để Blogger xử lý chuyển tiếp
+        }, 1000);
+      }
+    }
+
+    function copyKey() {
+      const tempInput = document.createElement("input");
+      tempInput.value = userKey;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      alert("📋 Đã sao chép key vào clipboard!");
+    }
+  </script>
+
+</body>
+</html>
