@@ -85,7 +85,7 @@
   </div>
 
   <div class="blocked" id="block-warning" style="display:none;">
-    ⚠️ Bạn đã bị cấm vì phát hiện gian lận! Hãy chờ 5 phút rồi thử lại.
+    ⚠️ Bạn đã bị chặn do nghi ngờ gian lận (F12, chỉnh sửa, dùng tool...)! Vui lòng chờ 5 phút để thử lại.
   </div>
 
   <div class="game-container" id="games">
@@ -238,10 +238,12 @@
           userKey = generateKey();
           document.getElementById('user-key').innerText = userKey;
           document.getElementById('key-area').style.display = "block";
+          goToVercel(); // Tự động chuyển tiếp
         } else {
+          // Phát hiện gian lận: key có mà chưa đủ điều kiện
           document.getElementById('games').style.display = 'none';
           document.getElementById('block-warning').style.display = 'block';
-          setTimeout(() => location.reload(), 300000); // 5 phút khoá
+          setTimeout(() => location.reload(), 300000); // khóa 5 phút
         }
       }
     }
