@@ -1,1 +1,272 @@
-oke
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>MiniGame Nhiệm Vụ</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 { text-align: center; color: #fbc531; }
+    .game-container {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+    .game {
+      background: #2f3640;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      margin: 10px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    button {
+      background: #00a8ff;
+      border: none;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .timer {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .drop-target {
+      border: 2px dashed #fff;
+      height: 50px;
+      margin-top: 10px;
+    }
+    .blocked {
+      color: red;
+      font-weight: bold;
+      text-align: center;
+    }
+    #key-area {
+      margin-top: 30px;
+      background: #44bd32;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      text-align: center;
+    }
+    #user-key {
+      font-size: 20px;
+      font-weight: bold;
+      background: #fff;
+      color: #000;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 MiniGame - Thử thách Trí Tuệ & Kiên Nhẫn 🎮</h1>
+
+  <div class="timer">
+    ⏳ Thời gian chờ trước khi chơi game: <span id="play-timer">10</span> giây<br>
+    🕒 Thời gian chờ toàn trang: <span id="page-timer">120</span> giây
+  </div>
+
+  <div class="blocked" id="block-warning" style="display:none;">
+    ⚠️ Bạn đã bị chặn vì nghi gian lận! Vui lòng đợi 5 phút và thử lại.
+  </div>
+
+  <div class="game-container" id="games">
+    <!-- Game 1 -->
+    <div class="game" id="game1">
+      <h3>Game 1: Ghi nhớ màu</h3>
+      <div class="timer">⏱ Nhớ chuỗi: <span id="game1-timer">--</span></div>
+      <div id="color-sequence"></div>
+      <input id="color-input" placeholder="Nhập chuỗi (VD: đỏ,xanh,...)"><br><br>
+      <button onclick="checkMemory()">Gửi</button>
+      <p id="game1-status"></p>
+    </div>
+
+    <!-- Game 2 -->
+    <div class="game" id="game2">
+      <h3>Game 2: Đếm hình</h3>
+      <div class="timer">⏱ Chờ: <span id="game2-timer">40</span>s</div>
+      <div id="count-area"></div>
+      <input id="count-input" type="number" placeholder="Nhập số lượng"><br><br>
+      <button onclick="checkCount()">Kiểm tra</button>
+      <p id="game2-status"></p>
+    </div>
+
+    <!-- Game 3 -->
+    <div class="game" id="game3">
+      <h3>Game 3: Kéo thả</h3>
+      <div class="timer">⏱ Chờ: <span id="game3-timer">40</span>s</div>
+      <div draggable="true" id="circle" style="width:40px;height:40px;background:orange;border-radius:50%;margin:10px;" ondragstart="drag(event)"></div>
+      <div id="dropzone" class="drop-target" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+      <p id="game3-status"></p>
+    </div>
+  </div>
+
+  <div id="key-area">
+    <p>🎉 Bạn đã hoàn thành đủ 3 game!</p>
+    <div id="user-key"></div>
+    <br/>
+    <button onclick="copyKey()">📋 Sao chép Key</button>
+    <button onclick="goToVercel()">🚀 Sang trang xác minh</button>
+  </div>
+
+  <script>
+    const REDIRECT_URL = "https://v0-new-project-hpzkcjchesg.vercel.app/";
+    let game1Completed = false, game2Completed = false, game3Completed = false;
+    let playWait = 10, pageWait = 120;
+    let startTime = null;
+    let userKey = "";
+
+    const timers = { game2: 40, game3: 40 };
+    const startTimes = { game2: Date.now(), game3: Date.now() };
+
+    const playTimer = setInterval(() => {
+      playWait--;
+      document.getElementById("play-timer").innerText = playWait;
+      if (playWait <= 0) {
+        clearInterval(playTimer);
+        enableGames();
+      }
+    }, 1000);
+
+    const pageTimer = setInterval(() => {
+      pageWait--;
+      document.getElementById("page-timer").innerText = pageWait;
+    }, 1000);
+
+    function enableGames() {
+      startTime = Date.now();
+      document.querySelectorAll(".game").forEach(g => {
+        g.style.opacity = "1";
+        g.style.pointerEvents = "auto";
+      });
+
+      Object.keys(timers).forEach(game => {
+        const interval = setInterval(() => {
+          timers[game]--;
+          document.getElementById(`${game}-timer`).innerText = timers[game];
+          if (timers[game] <= 0) clearInterval(interval);
+        }, 1000);
+      });
+
+      document.getElementById("game1-timer").innerText = "--";
+    }
+
+    const colors = ["đỏ", "xanh", "vàng", "tím", "cam"];
+    const sequence = Array.from({ length: 4 }, () => colors[Math.floor(Math.random() * colors.length)]);
+    document.getElementById('color-sequence').innerText = sequence.join(", ");
+
+    function checkMemory() {
+      const input = document.getElementById('color-input').value.toLowerCase().replace(/\s+/g, '').replace(/,/g, '');
+      const target = sequence.join('').toLowerCase();
+      if (input === target) {
+        game1Completed = true;
+        document.getElementById('game1-status').innerText = "✅ Hoàn thành!";
+        checkFinal();
+      } else {
+        document.getElementById('game1-status').innerText = "❌ Sai rồi! Chuỗi là: " + sequence.join(", ");
+      }
+    }
+
+    let correctCount = 0;
+    const area = document.getElementById('count-area');
+    for (let i = 0; i < 20; i++) {
+      const div = document.createElement('div');
+      div.style.width = div.style.height = "20px";
+      div.style.display = "inline-block";
+      div.style.margin = "2px";
+      const isYellow = Math.random() < 0.4;
+      if (isYellow) {
+        div.style.background = "yellow";
+        correctCount++;
+      } else {
+        div.style.background = "gray";
+      }
+      area.appendChild(div);
+    }
+
+    function checkCount() {
+      const val = parseInt(document.getElementById('count-input').value);
+      const duration = (Date.now() - startTimes.game2) / 1000;
+      if (val === correctCount && duration >= 40) {
+        game2Completed = true;
+        document.getElementById('game2-status').innerText = "✅ Chính xác!";
+        checkFinal();
+      } else {
+        alert("❌ Sai hoặc chưa đủ thời gian.");
+      }
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+    function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const duration = (Date.now() - startTimes.game3) / 1000;
+      if (duration >= 40) {
+        ev.target.appendChild(document.getElementById(data));
+        game3Completed = true;
+        document.getElementById('game3-status').innerText = "✅ Thả đúng!";
+        checkFinal();
+      } else {
+        alert("❌ Phải đợi 40 giây!");
+      }
+    }
+
+    function checkFinal() {
+      const now = Date.now();
+      const elapsed = (now - startTime) / 1000;
+
+      if (game1Completed && game2Completed && game3Completed) {
+        if (elapsed >= 120) {
+          userKey = generateKey();
+          document.getElementById('user-key').innerText = userKey;
+          document.getElementById('key-area').style.display = "block";
+          goToVercel(); // tự chuyển trang
+        } else {
+          // phát hiện gian lận
+          document.getElementById('games').style.display = 'none';
+          document.getElementById('block-warning').style.display = 'block';
+          setTimeout(() => location.reload(), 300000); // 5 phút
+        }
+      }
+    }
+
+    function generateKey(length = 20) {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+
+    function copyKey() {
+      navigator.clipboard.writeText(userKey)
+        .then(() => alert("📋 Key đã được sao chép!"))
+        .catch(err => alert("⚠️ Lỗi sao chép: " + err));
+    }
+
+    function goToVercel() {
+      const finalURL = REDIRECT_URL + "?key=" + encodeURIComponent(userKey);
+
+      if (window !== window.parent) {
+        // Nếu nhúng trong iframe (Blogger)
+        window.open(finalURL, "_blank");
+      } else {
+        window.location.href = finalURL;
+      }
+    }
+  </script>
+</body>
+</html>
